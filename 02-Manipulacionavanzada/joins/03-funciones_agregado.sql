@@ -26,7 +26,7 @@ SELECT ShipCountry, COUNT(*) AS [Total de Ordenes Enviadas]
 FROM Orders
 GROUP BY ShipCountry;
 
--- Agregación count(+) cuenta el numero de registros que tiene una tabla
+-- Agregaciï¿½n count(+) cuenta el numero de registros que tiene una tabla
 
 SELECT COUNT(*) AS [Total de Ordenes]
 FROM Orders;
@@ -55,7 +55,7 @@ ORDER BY City ASC;
 SELECT COUNT(DISTINCT City) AS [CIUDADES CLIENTES]
 FROM Customers;
 
--- Selecciona el precio máximo de los productos
+-- Selecciona el precio mï¿½ximo de los productos
 
 SELECT *
 FROM Products
@@ -72,12 +72,12 @@ FROM Orders;
 SELECT MAX(OrderDate) AS [Orden mas reciente]
 FROM Orders;
 
--- Seleccionar el año de la fecha de compra mas reciente
+-- Seleccionar el aï¿½o de la fecha de compra mas reciente
 
-SELECT MAX(YEAR(OrderDate)) AS [Año mas reciente]
+SELECT MAX(YEAR(OrderDate)) AS [Aï¿½o mas reciente]
 FROM Orders;
 -- Son lo mismo 
-SELECT MAX(DATEPART(YEAR, OrderDate)) AS [Año mas reciente]
+SELECT MAX(DATEPART(YEAR, OrderDate)) AS [Aï¿½o mas reciente]
 FROM Orders;
 
 -- Cual es la minima cantidad de los pedidos
@@ -88,7 +88,7 @@ FROM [Order Details];
 SELECT MIN(Quantity) AS [Cantidad Minima]
 FROM [Order Details];
 
--- Cual es el importe más bajo de las compras
+-- Cual es el importe mï¿½s bajo de las compras
 
 SELECT (UnitPrice * Quantity * (1-Discount)) AS [Importe]
 FROM [Order Details]
@@ -291,7 +291,7 @@ SELECT *, (UnitPrice * Quantity) AS [Total]
 FROM [Order Details]
 WHERE OrderID = 10847 AND ProductID = 1;
 
--- Seleccionar la cantidad máxima vendida por producto en cada pedido
+-- Seleccionar la cantidad mï¿½xima vendida por producto en cada pedido
 
 SELECT *
 FROM [Order Details];
@@ -305,7 +305,7 @@ GROUP BY ProductID, OrderID
 ORDER BY ProductID, OrderID;
 
 /*
-	Flujo lógico de ejecución de SQL
+	Flujo lï¿½gico de ejecuciï¿½n de SQL
 	1. FROM
 	2. JOIN
 	3. WHERE
@@ -318,7 +318,7 @@ ORDER BY ProductID, OrderID;
 
 -- Having (Filtro pero de grupos)
 
--- Seleccionar los clientes que hayan realizado más de 10 pedidos+
+-- Seleccionar los clientes que hayan realizado mï¿½s de 10 pedidos+
 
 SELECT CustomerID, COUNT(*) AS [Numero de Ordenes]
 FROM Orders
@@ -410,7 +410,7 @@ WHERE p.Discontinued = 0
 GROUP BY p.ProductName
 HAVING COUNT(OrderID) < 15;
 
--- Seleccionar el precio máximo de productos por categoria, pero solo si la suma de unidades es menor a 200
+-- Seleccionar el precio mï¿½ximo de productos por categoria, pero solo si la suma de unidades es menor a 200
 -- Ademas que no esten descontinuados
 
 SELECT
