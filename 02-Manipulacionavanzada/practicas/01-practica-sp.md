@@ -59,5 +59,26 @@ El SP asegura la integridad de los datos mediante las siguientes validaciones an
 
 ---
 
+## 4. Lógica del Stored Procedure Masivo (`usp_agregar_venta_masiva`)
+
+Para optimizar el rendimiento y procesar múltiples artículos en una sola transacción, se implementó una variante avanzada del procedimiento utilizando **User-Defined Table Types**.
+
+### Creación del Tipo de Tabla
+Se creó un tipo de dato estructurado llamado `dbo.ProductoVenta` que actúa como plantilla para recibir una lista dinámica de productos y sus cantidades correspondientes.
+
+**Código del Table Type:**
+![Captura de creación del tipo de tabla](/img/SP8.png)
+
+### Procesamiento en Bloque (Set-Based Operations)
+A diferencia del SP individual, `usp_agregar_venta_masiva` recibe el tipo de tabla como un parámetro `READONLY`. 
+* **Validaciones Globales:** En lugar de validar producto por producto, utiliza consultas `EXISTS` con `JOINs` para asegurar que **todos** los productos de la lista existan y tengan stock suficiente antes de iniciar cualquier inserción.
+* **Inserción y Actualización Masiva:** Utiliza `INSERT INTO ... SELECT` para guardar todos los detalles de venta de golpe, y un `UPDATE ... FROM` con `JOIN` para descontar el inventario de todos los artículos involucrados simultáneamente.
+* **Manejo de Errores con RAISERROR:** Dentro del bloque `CATCH`, los errores son capturados y devueltos al usuario utilizando `RAISERROR` junto con las funciones del sistema (`ERROR_MESSAGE()`, `ERROR_SEVERITY()`, etc.).
+
+**Ejecución del SP Masivo:**
+![Captura de declaración de variable, inserción de datos y ejecución del SP](/img/SP9.png)
+![Captura de declaración de variable, inserción de datos y ejecución del SP](/img/SP10.png)
+
+
 ## 5. Conclusión
 Esta práctica me permitió consolidar mis conocimientos en el manejo de bases de datos relacionales y la programación segura con T-SQL. Aprendí que el control estricto de transacciones y validaciones no solo evita errores en un sistema de ventas, sino que sienta las bases lógicas para cualquier proyecto que requiera un manejo de datos impecable, desde una aplicación empresarial hasta la gestión de inventarios y bases de datos en el desarrollo de videojuegos.

@@ -142,3 +142,102 @@ GO
 
 EXEC usp_agregar_venta @id_cliente = 'ANATR', @id_producto = 2, @cantidad_vendida = 30;
 GO
+
+-- Crear un Store que permita agregar N productos
+-- Crear una tabla tipo Type, esa tabla enviarla como parametro al Store
+-- Parametro: Id_cliente, Cantidad, Tabla tipo Type
+
+-- Crear tabla tipo Type
+CREATE TYPE dbo.ProductoVenta AS TABLE (
+    id_producto INT,
+    cantidad_vendida INT
+);
+GO
+
+-- Crear el Store Procedure para agregar una venta con múltiples productos
+CREATE OR ALTER PROC usp_agregar_venta_masiva
+    @id_cliente NCHAR(5),
+    @tabla_productos [dbo].[ProductoVenta] READONLY 
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Validar si el cliente existe
+        IF NOT EXISTS (SELECT 1 FROM CatCliente WHERE id_cliente = @id_cliente)
+            THROW 50001, 'El cliente no existe.', 1;
+
+        -- 2. Validar que todos los productos en la lista existan
+        IF EXISTS (SELECT 1 FROM @tabla_productos tp 
+                   LEFT JOIN CatProducto cp ON tp.id_producto = cp.id_producto 
+                   WHERE cp.id_producto IS NULL)
+            THROW 50002, 'Uno o más productos en la lista no existen.', 1;
+
+        -- 3. Validar existencia (stock) para TODOS los productos antes de insertar
+        IF EXISTS (
+            SELECT 1 
+            FROM @tabla_productos tp
+            JOIN CatProducto cp ON tp.id_producto = cp.id_producto
+            -- Usamos 'cantidad_vendida' como lo definiste en tu Type
+            WHERE tp.cantidad_vendida > cp.existencia
+        )
+            THROW 50003, 'No hay existencia suficiente para uno o más productos.', 1;
+
+        -- 4. Insertar la cabecera de la venta (TblVenta)
+        INSERT INTO TblVenta (fecha, id_cliente) 
+        VALUES (GETDATE(), @id_cliente);
+
+        DECLARE @id_venta_generada INT = SCOPE_IDENTITY();
+
+        -- 5. Insertar el detalle (TblDetalleVenta) obteniendo precios de CatProducto
+        INSERT INTO TblDetalleVenta (id_venta, id_producto, precio_venta, cantidad_vendida)
+        SELECT 
+            @id_venta_generada, 
+            tp.id_producto, 
+            cp.precio, 
+            tp.cantidad_vendida -- Usamos 'cantidad_vendida'
+        FROM @tabla_productos tp
+        JOIN CatProducto cp ON tp.id_producto = cp.id_producto;
+
+        -- 6. Actualizar el stock en CatProducto (Operación masiva)
+        UPDATE cp
+        SET cp.existencia = cp.existencia - tp.cantidad_vendida -- Usamos 'cantidad_vendida'
+        FROM CatProducto cp
+        JOIN @tabla_productos tp ON cp.id_producto = tp.id_producto;
+
+        COMMIT TRANSACTION;
+        PRINT 'Venta múltiple registrada exitosamente.';
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        -- Re-lanzar el error para que se muestre en la consola
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- Ejemplo de cómo ejecutar el SP para agregar una venta con múltiples productos
+-- Declaramos la variable usando tu tipo de tabla
+DECLARE @ListaVenta AS [dbo].ProductoVenta;
+
+-- Agregamos datos de prueba
+INSERT INTO @ListaVenta (id_producto, cantidad_vendida)
+VALUES 
+(1, 2),  
+(2, 5),  
+(10, 1); 
+
+-- Ejecutamos el Store Procedure
+EXEC usp_agregar_venta_masiva 
+    @id_cliente = 'ALFKI', 
+    @tabla_productos = @ListaVenta;
+GO
+
+SELECT * FROM TblVenta;
+SELECT * FROM TblDetalleVenta;
